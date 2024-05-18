@@ -30,7 +30,7 @@ public class TabObjetivoDiaRepository : ITabObjetivoDiaRepository
         {
             var sql = SqlQueries.TabOjetivoDiaUpdate.Replace("@CODIGOUNIDADE", entity.CodigoUnidade.ToString())
                                             .Replace("@SUPERVISORID", entity.CodigoSupervisor.ToString())
-                                            .Replace("@DATA", entity.Data.ToString("yyyy-MM-dd HH:mm:ss"))
+                                            .Replace("@DATA", entity.Data.ToString("dd/MM/yyyy"))
                                             .Replace("@VALORMETA", entity.ValorMeta.ToString().Replace(",","."));
             var result = await _dbConnection.QueryFirstOrDefaultAsync<TabObjetivoDiaIn>(sql);
 

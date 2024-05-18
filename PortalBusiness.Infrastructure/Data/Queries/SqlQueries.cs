@@ -2007,38 +2007,29 @@ public static class SqlQueries
 
     public static string TabOjetivoDiaUpdate => @"update tabobjetivodia
                                                   set valormeta = @VALORMETA
-                                                 where data = TO_DATE('@DATA', 'YYYY-MM-DD HH24:MI:SS') 
+                                                 where data = '@DATA'
                                                    and codigosupervisor = @SUPERVISORID
                                                    and codigounidade = @CODIGOUNIDADE ";
-    public static string tabObjetivoDia => @"SELECT
-                                             TABOBJETIVODIA.DATA,
-                                             TABOBJETIVODIA.VALORMETA,
-                                             SUM(DECODE(PCPEDC.CONDVENDA,
-                                                        5,
-                                                        0,
-                                                        6,
-                                                        0,
-                                                        11,
-                                                        0,
-                                                        12,
-                                                        0,
-                                                        NVL(PCPEDC.VLATEND - NVL(PCPEDC.VLFRETE, 0), 0))) AS VALORVENDIDO
-
-                                              FROM PCPEDC, TABOBJETIVODIA
-                                             WHERE /*TABOBJETIVODIA.DATA = PCPEDC.DATA
-                                               AND*/ PCPEDC.CODFILIAL = TABOBJETIVODIA.CODIGOUNIDADE
-                                               AND EXISTS
-                                             (SELECT *
-                                                      FROM TABUSUARIO U
-                                                     WHERE U.CODIGORCAUSUARIO = PCPEDC.CODUSUR
-                                                       AND U.IDSUPERIOR = @SUPERVISORID)
-                                               AND PCPEDC.POSICAO IN ('L', 'P', 'M', 'B')
-                                               AND PCPEDC.DTCANCEL IS NULL
-                                               AND PCPEDC.CODFILIAL = @CODIGOUNIDADE
-                                               AND PCPEDC.CONDVENDA IN (1, 2, 3, 7, 9, 14, 15, 17, 18, 19, 98)
-                                               AND PCPEDC.DATA = TRUNC(SYSDATE)
-
-                                             GROUP BY TABOBJETIVODIA.DATA, TABOBJETIVODIA.VALORMETA";
+    public static string tabObjetivoDia => @"SELECT TABOBJETIVODIA.DATA,
+                                                   TABOBJETIVODIA.VALORMETA,
+                                                   nvl((SELECT SUM(P.VLATEND)
+                                                      FROM PCPEDC P
+                                                     WHERE P.DATA = TABOBJETIVODIA.DATA
+                                                       AND P.CODFILIAL = TABOBJETIVODIA.CODIGOUNIDADE
+                                                       AND P.DTCANCEL IS NULL
+                                                       AND P.POSICAO IN ('L','M','P','B','F')
+                                                       AND EXISTS (SELECT * 
+                                                                     FROM TABUSUARIO U
+                                                                    WHERE U.CODIGORCAUSUARIO = P.CODUSUR 
+                                                                      AND U.IDSUPERIOR = TABOBJETIVODIA.CODIGOSUPERVISOR)),0) AS VALORVENDIDO
+                                              FROM TABOBJETIVODIA
+                                             WHERE TABOBJETIVODIA.DATA = TRUNC(SYSDATE)
+                                               AND TABOBJETIVODIA.CODIGOUNIDADE = @CODIGOUNIDADE
+                                               AND TABOBJETIVODIA.CODIGOSUPERVISOR = @SUPERVISORID
+                                             GROUP BY TABOBJETIVODIA.DATA, 
+                                                      TABOBJETIVODIA.CODIGOUNIDADE, 
+                                                      TABOBJETIVODIA.CODIGOSUPERVISOR, 
+                                                      TABOBJETIVODIA.VALORMETA";
 
     public static string ProdutoGrafico => @"SELECT 
         SUM(DECODE(TO_CHAR(PCPEDI.DATA, 'MM'),
