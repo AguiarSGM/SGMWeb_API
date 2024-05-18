@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  portal-business-api:
+    image: portal-business-api
+    build:
+      context: .
+      dockerfile: Dockerfile.cs
+    ports:
+      - "8080:80"
+    networks:
+      - my-network
+    depends_on:
+      - oracle-db
+
+  oracle-db:
+    image: alexeiled/docker-oracle-xe-11g
+    environment:
+      ORACLE_ALLOW_REMOTE: 'true'
+      ORACLE_DISABLE_ASYNCH_IO: 'true'
+      ORACLE_HOME: /u01/app/oracle/product/11.2.0/xe
+      ORACLE_SID: XE
+      ORACLE_PASSWORD: YourOraclePassword
+    ports:
+      - "1521:1521"
+    networks:
+      - my-network
+
+networks:
+  my-network:
