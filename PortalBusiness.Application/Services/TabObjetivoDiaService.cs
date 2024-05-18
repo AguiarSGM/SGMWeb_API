@@ -18,7 +18,8 @@ public class TabObjetivoDiaService : ITabObjetivoDiaService
 
     public async Task<TabObjetivoDiaIn> FindObjetivoDiaServiceAsync(TabObjetivoDiaIn entity)
     {
-        return await _tabObjetivoDiaRepository.FindObjetivoDiaRepositoryAsync(entity);
+        var objetivoDiaIn = await _tabObjetivoDiaRepository.FindObjetivoDiaRepositoryAsync(entity);
+        return objetivoDiaIn;
     }
 
     public async Task<TabObjetivoDiaOut> GetbyUnidadeServiceAsync(string unidade, string supervisor)

@@ -2002,6 +2002,11 @@ public static class SqlQueries
 
     public static string tabServidor => @"select HOST, PORTA, USUARIO AS LICENCA from tabservidor where tiposervidor = 2";
 
+    public static string tabOjetivoDiaUpdate = @"update tabobjetivodia
+                                                  set valormeta = @VALORMETA
+                                                 where data = TO_DATE('@DATA', 'DD/MM/YYYY HH24:MI:SS')
+                                                   and codigosupervisor = @SUPERVISORID
+                                                   and codigounidade = @CODIGOUNIDADE ";
     public static string tabObjetivoDia => @"SELECT
                                              TABOBJETIVODIA.DATA,
                                              TABOBJETIVODIA.VALORMETA,

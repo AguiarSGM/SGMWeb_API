@@ -26,17 +26,34 @@ public class TabObjetivoDiaRepository : ITabObjetivoDiaRepository
     }
     public async Task<TabObjetivoDiaIn> UpdateObjetivoDiaRepositoryAsync(TabObjetivoDiaIn entity)
     {
-        _context.TabObjetivoDia.Update(entity);
-        await _context.SaveChangesAsync();
+        try
+        {
+            var sql = SqlQueries.tabOjetivoDiaUpdate.Replace("@CODIGOUNIDADE", entity.CodigoUnidade.ToString())
+                                            .Replace("@SUPERVISORID", entity.CodigoSupervisor.ToString())
+                                            .Replace("@DATA", entity.Data.ToString())
+                                            .Replace("@VALORMETA", entity.ValorMeta.ToString().Replace(",","."));
+            var result = await _dbConnection.QueryFirstOrDefaultAsync<TabObjetivoDiaIn>(sql);
 
-        return entity;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error updating entity: {ex.Message}", ex);
+        }
     }
 
     public async Task<TabObjetivoDiaIn> FindObjetivoDiaRepositoryAsync(TabObjetivoDiaIn entity)
     {
-        return await _context.TabObjetivoDia.FirstOrDefaultAsync(item => item.CodigoUnidade == entity.CodigoUnidade &&
-                                                                         item.Data == entity.Data &&
-                                                                         item.CodigoSupervisor == entity.CodigoSupervisor);
+        var startTime = entity.Data.AddMilliseconds(-entity.Data.Millisecond);
+        var endTime = entity.Data.AddMilliseconds(1000 - entity.Data.Millisecond);
+
+        var query = _context.TabObjetivoDia
+            .Where(item => item.CodigoUnidade == entity.CodigoUnidade &&
+                           item.CodigoSupervisor == entity.CodigoSupervisor &&
+                           item.Data >= startTime &&
+                           item.Data < endTime);
+
+        return await query.FirstOrDefaultAsync();
     }
 
     public async Task<TabObjetivoDiaOut> GetbyUnidadeRepositoryAsync(string unidade, string supervisor)
