@@ -11,6 +11,7 @@ using PortalBusiness.Infrastructure.Interfaces.ContractSales;
 using PortalBusiness.Infrastructure.Ioc;
 using PortalBusiness.Shared;
 using System.Data;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,8 +90,8 @@ builder.Services.AddScoped<IAtendimentoService, AtendimentoService>();
 builder.Services.AddScoped<IOportunidadeRepository, OportunidadeRepository>();
 builder.Services.AddScoped<IOportunidadeService, OportunidadeService>();
 
-builder.Services.AddScoped <ITransportadoraService, TransportadoraService>();
-builder.Services.AddScoped <ITransportadoraRepository, TransportadoraRepository>();
+builder.Services.AddScoped<ITransportadoraService, TransportadoraService>();
+builder.Services.AddScoped<ITransportadoraRepository, TransportadoraRepository>();
 
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
@@ -107,30 +108,27 @@ builder.Services.AddScoped<IPedidoRepository, PedidoRepository>();
 builder.Services.AddScoped<ITabObjetivoDiaService, TabObjetivoDiaService>();
 builder.Services.AddScoped<ITabObjetivoDiaRepository, TabObjetivoDiaRepository>();
 
-//builder.Services.AddAutoMapper(typeof(MappingProfile));
-
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<UserContext>();
 
-builder.Services.AddControllers().AddNewtonsoftJson();
-
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+        options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+    });
 
 builder.Services.AddSingleton<IConfiguration>(configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 
-
-
 builder.Services.AddInfrastructureJWT(configuration);
 builder.Services.AddInfrastructureSwagger(configuration);
 
-
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
 
 app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 

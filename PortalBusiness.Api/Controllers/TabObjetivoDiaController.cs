@@ -30,8 +30,9 @@ public class TabObjetivoDiaController : ControllerBase
                 result = await _tabObjetivoDiaService.AddObjetivoDiaServiceAsync(tabObjetivoDia);
             }
             else
-            {
-                result = tabOjetivo;
+            {                
+                await _tabObjetivoDiaService.UpdateObjetivoDiaServiceAsync(tabObjetivoDia);
+                result = tabObjetivoDia;
             }
             
             return Ok(result);
