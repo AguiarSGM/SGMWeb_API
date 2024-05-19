@@ -39,4 +39,8 @@ public class Client
 
     [JsonProperty("bloqueio_definitivo")]
     public string bloqueio_definitivo { get; set; }
+
+    [JsonProperty("dataultimopedido")]
+    public string dataultimopedido { get; set; }
+    
 }

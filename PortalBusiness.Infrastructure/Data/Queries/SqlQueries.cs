@@ -375,26 +375,27 @@ public static class SqlQueries
 
     public static string Clients => @"
         SELECT DISTINCT 
-            cli.codcli AS codigoCliente, 
-            cli.cliente AS razaoSocialCliente, 
-            cli.fantasia AS fantasiaCliente, 
-            cli.cgcent AS CNPJCliente, 
-            0 AS saldoLimite, 
-            0 AS debito, 
-            cli.bloqueio AS bloqueioCliente, 
-            cli.bloqueiosefaz AS bloqueioSefaz,
-            cli.estempr as client_uf,
-            cli.municempr as client_cidade,
-            cli.bairrocom as client_bairro,
-            cli.bloqueiodefinitivo as bloqueio_definitivo
-        FROM pcclient cli 
-        WHERE 1 = 1 
-            AND EXISTS ( 
-                SELECT * 
-                FROM VSGM_CLIENTE_RCA R 
-                WHERE R.CODIGOCLIENTE = Cli.Codcli 
-                AND R.IDUSUARIO = @IDUSUARIO) 
-        ORDER BY cli.cliente ASC";
+                cli.codcli AS codigoCliente, 
+                cli.cliente AS razaoSocialCliente, 
+                cli.fantasia AS fantasiaCliente, 
+                cli.cgcent AS CNPJCliente, 
+                0 AS saldoLimite, 
+                0 AS debito, 
+                cli.bloqueio AS bloqueioCliente, 
+                cli.bloqueiosefaz AS bloqueioSefaz,
+                cli.estempr as client_uf,
+                cli.municempr as client_cidade,
+                cli.bairrocom as client_bairro,
+                cli.bloqueiodefinitivo as bloqueio_definitivo,
+                SGMCONTROL.SGM_BUSCADATAULTIMOPEDIDO(CLI.CODCLI,@IDUSUARIO)    AS DATAULTIMOPEDIDO
+            FROM pcclient cli 
+            WHERE 1 = 1 
+                AND EXISTS ( 
+                    SELECT * 
+                    FROM VSGM_CLIENTE_RCA R 
+                    WHERE R.CODIGOCLIENTE = Cli.Codcli 
+                    AND R.IDUSUARIO = @IDUSUARIO) 
+            ORDER BY cli.cliente ASC";
 
     public static string ClientesNew => @"
             SELECT ID
@@ -1594,131 +1595,140 @@ public static class SqlQueries
 
     public static string Devolucoes => @"
         SELECT 
-               DEVOL.DTENT,
-               DEVOL.NUMNOTA,
-               DEVOL.CODPROD,                                                
-               DEVOL.PRODUTO,                                                                                                 
-               DEVOL.QTITENS    AS QTD,                                                
-               ROUND(DEVOL.VLTOTAL,2) AS VLTOTAL,
-               DEVOL.MOTIVO                                                                                            
-        FROM  (SELECT  
-                       DTENT,
-                       NUMNOTA,
-                       MOTIVO, 
-                       CODPROD, 
-                       DESCRICAO AS PRODUTO, 
-                       SUM(NVL(VLDEVOLUCAO,0) + NVL(VLDEVOLBONIFIC,0)) VLTOTAL,     
-                       SUM(NVL(QT,0)) QTITENS,                               
-                       SUM(NVL(TOTPESO,0)) TOTPESO,                          
-                       SUM(NVL(VLOUTRAS,0) + NVL(VLFRETE,0) ) VLOUTRAS FROM ( 
-        SELECT DEVOL.CODPROD,                     
-            DEVOL.DESCRICAO,                      
-            DEVOL.TOTPESO,                        
-            DEVOL.VLOUTRAS,                       
-            DEVOL.VLDEVOLUCAO,                    
-            DEVOL.VLDEVOLBONIFIC,                 
-            DEVOL.VLFRETE,                        
-            DEVOL.CODDEVOL,                       
-            DEVOL.MOTIVO,                         
-            DEVOL.MOTIVO2,                        
-            DEVOL.DEVOLITEM,                      
-            DEVOL.NUMNOTA,                        
-            DEVOL.CODMOTORISTADEVOL,              
-            DEVOL.CODFORNEC,                      
-            DEVOL.CODFILIAL,                      
-            DEVOL.DTENT,                          
-            DEVOL.CONDVENDA,                      
-            DEVOL.QT,                             
-            DEVOL.CODEPTO,                        
-            DEVOL.UNIDADE,                        
-            DEPARTAMENTO,         
-            FORNECEDOR ,         
-            DEVOL.SUPERV,          
-            DEVOL.CODSUPERVISOR,   
-            DEVOL.NOME,                  
-            DEVOL.CODUSUR,                
-            DEVOL.CLIENTE,                  
-            DEVOL.CODCLI,                
-            DEVOL.EMBALAGEM           
-        FROM (                              
-              SELECT VW.CODPROD,               
-                    VW.DESCRICAO,              
-                    VW.TOTPESO,                
-                    VW.VLOUTRAS,               
-                    VW.VLDEVOLUCAO,            
-                    VW.VLDEVOLBONIFIC,         
-                    VW.VLFRETE,                
-                    VW.CODDEVOL,               
-                    VW.MOTIVO,                 
-                    VW.MOTIVO2,                
-                    VW.DEVOLITEM,              
-                    VW.NUMNOTA,                
-                    VW.CODMOTORISTADEVOL,      
-                    VW.CODFORNEC,              
-                    VW.CODFILIAL,              
-                    VW.DTENT,                  
-                    VW.CONDVENDA,              
-                    VW.QT,                     
-                    VW.CODEPTO,                
-                    VW.DEPARTAMENTO,           
-                    VW.FORNECEDOR,              
-                    PCSUPERV.NOME AS SUPERV,          
-                    VW.CODSUPERVMOV AS CODSUPERVISOR,   
-                    VW.NOME,                  
-                    VW.CODUSUR,                
-                    VW.CLIENTE,                  
-                    VW.CODCLI,                
-                    VW.UNIDADE,           
-                    VW.EMBALAGEM,           
-                    VW.TEMVENDATV8,  
-                    VW.BONIFICADO 
-               FROM VIEW_DEVOL_RESUMO_FATURAMENTO VW, PCSUPERV
-                  , PCNFENT 
-               WHERE VW.NUMTRANSENT = PCNFENT.NUMTRANSENT 
-                  AND PCSUPERV.CODSUPERVISOR = VW.CODSUPERVMOV 
-               AND PCNFENT.TIPODESCARGA <> 'T'
-             UNION ALL                      
-             SELECT CODPROD,                
-                    DESCRICAO,              
-                    TOTPESO,                
-                    VLOUTRAS,               
-                    VLDEVOLUCAO,            
-                    0 VLDEVOLBONIFIC,       
-                    VLFRETE,                
-                    CODDEVOL,               
-                    MOTIVO,                 
-                    MOTIVO2,                
-                    DEVOLITEM,              
-                    NUMNOTA,                
-                    CODMOTORISTADEVOL,      
-                    CODFORNEC,              
-                    CODFILIAL,              
-                    DTENT,                  
-                    0 CONDVENDA,            
-                    QT,                     
-                    CODEPTO,                
-                    '' DEPARTAMENTO,      
-                    '' FORNECEDOR,        
-                    SUPERV,          
-                    CODSUPERVISOR,   
-                    NOME,                  
-                    CODUSUR,                
-                    CLIENTE,                  
-                    CODCLI,                
-                    UNIDADE,           
-                    EMBALAGEM,           
-                    NULL AS TEMVENDATV8, 
-                    BONIFICADO 
-               FROM VIEW_DEVOL_RESUMO_FATURAVULSA
-         ) DEVOL                            
-         WHERE DEVOL.CODCLI = @CODIGOCLIENTE
-          AND ((DEVOL.CONDVENDA NOT IN (4, 8, 10, 13, 20, 98, 99) AND (DEVOL.TEMVENDATV8 IS NOT  NULL)) OR 
-               (DEVOL.CONDVENDA NOT IN (4, 10, 13, 20, 98, 99)    AND (DEVOL.TEMVENDATV8 IS NULL)))
-               AND (DEVOL.CODFILIAL IN ( @CODIGOUNIDADE )) 
-              )  GROUP BY DTENT,
-                       NUMNOTA,
-                       MOTIVO, CODPROD ,DESCRICAO) DEVOL                          
-                ORDER BY DEVOL.VLTOTAL DESC ";
+       DEVOL.DTENT,
+       DEVOL.NUMNOTA,
+       DEVOL.NOTAORIGEM,
+       DEVOL.CODPROD,                                                
+       DEVOL.PRODUTO,                                                                                                 
+       DEVOL.QTITENS    AS QTD,                                                
+       ROUND(DEVOL.VLTOTAL,2) AS VLTOTAL,
+       DEVOL.MOTIVO                                                                                            
+FROM  (SELECT  
+               DTENT,
+               NUMNOTA,
+               NOTAORIGEM,
+               MOTIVO, 
+               CODPROD, 
+               DESCRICAO AS PRODUTO, 
+               SUM(NVL(VLDEVOLUCAO,0) + NVL(VLDEVOLBONIFIC,0)) VLTOTAL,     
+               SUM(NVL(QT,0)) QTITENS,                               
+               SUM(NVL(TOTPESO,0)) TOTPESO,                          
+               SUM(NVL(VLOUTRAS,0) + NVL(VLFRETE,0) ) VLOUTRAS FROM ( 
+SELECT DEVOL.CODPROD,                     
+    DEVOL.DESCRICAO,                      
+    DEVOL.TOTPESO,                        
+    DEVOL.VLOUTRAS,                       
+    DEVOL.VLDEVOLUCAO,                    
+    DEVOL.VLDEVOLBONIFIC,                 
+    DEVOL.VLFRETE,                        
+    DEVOL.CODDEVOL,                       
+    DEVOL.MOTIVO,                         
+    DEVOL.MOTIVO2,                        
+    DEVOL.DEVOLITEM,                      
+    DEVOL.NUMNOTA,                        
+    DEVOL.CODMOTORISTADEVOL,              
+    DEVOL.CODFORNEC,                      
+    DEVOL.CODFILIAL,                      
+    DEVOL.DTENT,                          
+    DEVOL.CONDVENDA,                      
+    DEVOL.QT,                             
+    DEVOL.CODEPTO,                        
+    DEVOL.UNIDADE,                        
+    DEPARTAMENTO,         
+    FORNECEDOR ,         
+    DEVOL.SUPERV,          
+    DEVOL.CODSUPERVISOR,   
+    DEVOL.NOME,                  
+    DEVOL.CODUSUR,                
+    DEVOL.CLIENTE,                  
+    DEVOL.CODCLI,                
+    DEVOL.EMBALAGEM,
+    DEVOL.NOTAORIGEM           
+FROM (                              
+      SELECT VW.CODPROD,               
+            VW.DESCRICAO,              
+            VW.TOTPESO,                
+            VW.VLOUTRAS,               
+            VW.VLDEVOLUCAO,            
+            VW.VLDEVOLBONIFIC,         
+            VW.VLFRETE,                
+            VW.CODDEVOL,               
+            VW.MOTIVO,                 
+            VW.MOTIVO2,                
+            VW.DEVOLITEM,              
+            VW.NUMNOTA,                
+            VW.CODMOTORISTADEVOL,      
+            VW.CODFORNEC,              
+            VW.CODFILIAL,              
+            VW.DTENT,                  
+            VW.CONDVENDA,              
+            VW.QT,                     
+            VW.CODEPTO,                
+            VW.DEPARTAMENTO,           
+            VW.FORNECEDOR,              
+            PCSUPERV.NOME AS SUPERV,          
+            VW.CODSUPERVMOV AS CODSUPERVISOR,   
+            VW.NOME,                  
+            VW.CODUSUR,                
+            VW.CLIENTE,                  
+            VW.CODCLI,                
+            VW.UNIDADE,           
+            VW.EMBALAGEM,           
+            VW.TEMVENDATV8,  
+            VW.BONIFICADO,
+            VW.NUMTRANSVENDA,
+            PCNFSAID.NUMNOTA   AS NOTAORIGEM 
+       FROM VIEW_DEVOL_RESUMO_FATURAMENTO VW, PCSUPERV
+          , PCNFENT, PCNFSAID 
+       WHERE VW.NUMTRANSENT = PCNFENT.NUMTRANSENT 
+          AND PCSUPERV.CODSUPERVISOR = VW.CODSUPERVMOV
+          AND VW.NUMTRANSVENDA = PCNFSAID.NUMTRANSVENDA 
+       AND PCNFENT.TIPODESCARGA <> 'T'
+     UNION ALL                      
+     SELECT CODPROD,                
+            DESCRICAO,              
+            TOTPESO,                
+            VLOUTRAS,               
+            VLDEVOLUCAO,            
+            0 VLDEVOLBONIFIC,       
+            VLFRETE,                
+            CODDEVOL,               
+            MOTIVO,                 
+            MOTIVO2,                
+            DEVOLITEM,              
+            NUMNOTA,                
+            CODMOTORISTADEVOL,      
+            CODFORNEC,              
+            CODFILIAL,              
+            DTENT,                  
+            0 CONDVENDA,            
+            QT,                     
+            CODEPTO,                
+            '' DEPARTAMENTO,      
+            '' FORNECEDOR,        
+            SUPERV,          
+            CODSUPERVISOR,   
+            NOME,                  
+            CODUSUR,                
+            CLIENTE,                  
+            CODCLI,                
+            UNIDADE,           
+            EMBALAGEM,           
+            NULL AS TEMVENDATV8, 
+            BONIFICADO,
+            NULL    AS NUMTRANSVENDA,
+            NULL    AS NOTAORIGEM 
+       FROM VIEW_DEVOL_RESUMO_FATURAVULSA
+ ) DEVOL                            
+ WHERE DEVOL.CODCLI = @CODIGOCLIENTE
+  AND ((DEVOL.CONDVENDA NOT IN (4, 8, 10, 13, 20, 98, 99) AND (DEVOL.TEMVENDATV8 IS NOT  NULL)) OR 
+       (DEVOL.CONDVENDA NOT IN (4, 10, 13, 20, 98, 99)    AND (DEVOL.TEMVENDATV8 IS NULL)))
+       AND (DEVOL.CODFILIAL IN ( @CODIGOUNIDADE )) 
+      )  GROUP BY DTENT,
+               NUMNOTA,
+               NOTAORIGEM,
+               MOTIVO, CODPROD ,DESCRICAO) DEVOL                          
+        ORDER BY DEVOL.VLTOTAL DESC";
 
     public static string Titulos => @"
         SELECT
