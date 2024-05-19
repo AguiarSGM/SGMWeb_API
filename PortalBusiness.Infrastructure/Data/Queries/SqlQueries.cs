@@ -2007,7 +2007,7 @@ public static class SqlQueries
 
     public static string TabOjetivoDiaUpdate => @"update tabobjetivodia
                                                   set valormeta = @VALORMETA
-                                                 where data = '@DATA'
+                                                 where data = TO_DATE('@DATA', 'YYYY-MM-DD')
                                                    and codigosupervisor = @SUPERVISORID
                                                    and codigounidade = @CODIGOUNIDADE ";
     public static string tabObjetivoDia => @"SELECT TABOBJETIVODIA.DATA,
