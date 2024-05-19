@@ -887,7 +887,7 @@ public static class SqlQueries
                                     || ',' ||
                                     '""precoMaximo"": 0.00,""precoMinimo"": 0.00,""percentualDescontoFlexivel"": 0.00,""percentualDescontoAutomatico"": 0.00,""percentualAcrescimoMaximo"": 0.00}' AS DADOS_COMERCIAIS,
 
-                                    MIXCLIENTE,
+                                    DECODE(:CODIGOCLIENTE,0,M.MIXCLIENTE,SGMCONTROL.SGM_MIXCLIENTE(:CODIGOCLIENTE,M.CODIGOPRODUTO))    MIXCLIENTE,
                                     CODIGODEPARTAMENTO,
                                     CODIGOSECAO,
                                     CODIGOCATEGORIA,
